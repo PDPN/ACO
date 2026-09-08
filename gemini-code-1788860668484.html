@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ant Colony Optimisation (ACO) | Real Mumbai Road Fleet Routing</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Leaflet CSS & JS for Real World Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            colony: {
+              950: '#070d0a',
+              900: '#0e1a14',
+              800: '#162920',
+              700: '#1f3d2f',
+              accent: '#10b981',
+              amber: '#f59e0b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    html { scroll-behavior: smooth; }
+    .pheromone-glow {
+      box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.3);
+    }
+    .ant-grid-pattern {
+      background-size: 30px 30px;
+      background-image: radial-gradient(rgba(16, 185, 129, 0.1) 1px, transparent 0);
+    }
+    .leaflet-container {
+      background: #070d0a !important;
+      font-family: inherit;
+    }
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip {
+      background: #0e1a14 !important;
+      color: #a7f3d0 !important;
+      border: 1px solid #065f46 !important;
+    }
+  </style>
+</head>
+<body class="bg-colony-950 text-emerald-100/90 ant-grid-pattern min-h-screen font-sans">
+
+  <!-- NAVIGATION -->
+  <nav class="sticky top-0 z-50 backdrop-blur-md bg-colony-950/80 border-b border-emerald-900/40 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 font-bold border border-emerald-500/40">
+        🐜
+      </div>
+      <span class="font-bold text-lg tracking-wider text-emerald-400">ACO REAL-ROAD ROUTING</span>
+    </div>
+    <div class="hidden md:flex items-center gap-6 text-sm">
+      <a href="#overview" class="hover:text-emerald-400 transition-colors">Overview</a>
+      <a href="#mumbai-sim" class="hover:text-emerald-400 transition-colors">Mumbai Live Model</a>
+      <a href="#biology-math" class="hover:text-emerald-400 transition-colors">Formulas & Core</a>
+      <a href="#presentation-deck" class="hover:text-emerald-400 transition-colors">Presentation PPT</a>
+      <a href="#team" class="hover:text-emerald-400 transition-colors">Team</a>
+    </div>
+  </nav>
+
+  <!-- 1. HERO / TITLE SECTION -->
+  <header id="overview" class="relative py-14 px-6 max-w-6xl mx-auto text-center border-b border-emerald-950">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-950/70 border border-emerald-500/30 text-emerald-400 text-xs tracking-wide uppercase mb-4">
+      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+      Real Road Network Integration (No Sea Crossing)
+    </div>
+    <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white mb-4">
+      Ant Colony <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-amber-300 to-emerald-500">Fleet Logistics</span>
+    </h1>
+    <p class="max-w-2xl mx-auto text-sm sm:text-base text-emerald-200/70 mb-8 leading-relaxed">
+      Optimized delivery routing calculated using ACO algorithms, mapped strictly to Mumbai's drivable road grid, expressways, and sea bridges.
+    </p>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto bg-colony-900/60 p-4 rounded-2xl border border-emerald-900/50 backdrop-blur">
+      <div class="text-left">
+        <span class="text-xs uppercase text-emerald-400/60 font-semibold block">Engine</span>
+        <span class="text-sm font-medium text-white">ACO + OSRM Roads</span>
+      </div>
+      <div class="text-left">
+        <span class="text-xs uppercase text-emerald-400/60 font-semibold block">Date</span>
+        <span class="text-sm font-medium text-white">September 02, 2026</span>
+      </div>
+      <div class="text-left col-span-2 md:col-span-2">
+        <span class="text-xs uppercase text-emerald-400/60 font-semibold block">Presented By</span>
+        <span class="text-sm font-medium text-emerald-300">Deveshi M., Gurvansh M., Pragyan M., Parth M.</span>[cite: 1]
+      </div>
+    </div>
+  </header>
+
+  <!-- 2. REAL ROAD MUMBAI ACO MODEL -->
+  <section id="mumbai-sim" class="py-12 px-6 max-w-7xl mx-auto">
+    <div class="flex flex-col items-center mb-6 text-center">
+      <h2 class="text-3xl font-bold text-white mb-2">Mumbai Real-Road Network Model</h2>
+      <p class="text-sm text-emerald-400/80">Every path strictly navigates drivable highways and bridges without traversing open water.</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 bg-colony-900/50 p-6 rounded-3xl border border-emerald-800/40 pheromone-glow">
+      
+      <!-- Interactive Mumbai Map -->
+      <div class="lg:col-span-2 flex flex-col gap-3">
+        <!-- Search Bar with Suggestions -->
+        <div class="relative">
+          <div class="flex items-center gap-2 bg-colony-950 border border-emerald-800/80 rounded-xl px-3 py-2">
+            <span class="text-emerald-400 text-sm">🔍</span>
+            <input 
+              id="locationSearchInput" 
+              type="text" 
+              placeholder="Search Mumbai checkpoint (e.g., Nariman Point, Bandra, Powai, Thane)..." 
+              class="w-full bg-transparent text-sm text-white focus:outline-none placeholder-emerald-800/60"
+            />
+            <button id="searchBtn" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-colony-950 text-xs font-bold rounded-lg transition">
+              Add Point
+            </button>
+          </div>
+          <ul id="searchResultsList" class="absolute z-[1000] w-full bg-colony-900 border border-emerald-800/80 rounded-xl mt-1 overflow-hidden hidden max-h-48 overflow-y-auto text-xs"></ul>
+        </div>
+
+        <!-- Leaflet Map Container -->
+        <div class="relative w-full h-[480px] rounded-2xl overflow-hidden border border-emerald-900/70 shadow-inner">
+          <div id="mumbaiMap" class="w-full h-full"></div>
+          <div id="routingSpinner" class="hidden absolute top-4 right-4 z-[500] bg-colony-950/90 border border-emerald-500/40 px-3 py-1.5 rounded-lg text-xs text-emerald-300 flex items-center gap-2">
+            <span class="w-3 h-3 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin"></span>
+            Snapping to road network...
+          </div>
+        </div>
+
+        <!-- Quick Landmark Shortcuts -->
+        <div class="flex flex-wrap items-center gap-2 pt-1 text-xs">
+          <span class="text-gray-400">Quick Add:</span>
+          <button onclick="addPreset('CSMT Station', 18.9401, 72.8356)" class="px-2.5 py-1 bg-colony-800 hover:bg-colony-700 text-emerald-300 rounded-lg border border-emerald-800/70 transition">+ CSMT</button>
+          <button onclick="addPreset('Worli Sea Face', 19.0130, 72.8152)" class="px-2.5 py-1 bg-colony-800 hover:bg-colony-700 text-emerald-300 rounded-lg border border-emerald-800/70 transition">+ Worli</button>
+          <button onclick="addPreset('BKC Diamond Bourse', 19.0664, 72.8687)" class="px-2.5 py-1 bg-colony-800 hover:bg-colony-700 text-emerald-300 rounded-lg border border-emerald-800/70 transition">+ BKC</button>
+          <button onclick="addPreset('Andheri Metro', 19.1197, 72.8464)" class="px-2.5 py-1 bg-colony-800 hover:bg-colony-700 text-emerald-300 rounded-lg border border-emerald-800/70 transition">+ Andheri</button>
+          <button onclick="addPreset('Vashi Toll Plaza', 19.0645, 72.9818)" class="px-2.5 py-1 bg-colony-800 hover:bg-colony-700 text-emerald-300 rounded-lg border border-emerald-800/70 transition">+ Navi Mumbai</button>
+        </div>
+      </div>
+
+      <!-- Controls & Active Checkpoint List -->
+      <div class="flex flex-col justify-between space-y-4">
+        <div class="space-y-4">
+          <div class="flex items-center justify-between border-b border-emerald-900/60 pb-2">
+            <h3 class="text-base font-semibold text-white">Route Stops</h3>
+            <span id="checkpointBadge" class="text-xs bg-emerald-950 border border-emerald-600/50 text-emerald-400 px-2 py-0.5 rounded-full font-mono">0 pts</span>
+          </div>
+
+          <!-- Checkpoints Scrollbox -->
+          <div id="checkpointsList" class="max-h-40 overflow-y-auto space-y-1.5 pr-1 text-xs text-emerald-200/80">
+            <p class="text-gray-500 italic">No stops added. Click the map or search above.</p>
+          </div>
+
+          <!-- Parameter Controls -->
+          <div class="space-y-3 pt-2 border-t border-emerald-900/40">
+            <div>
+              <div class="flex justify-between text-xs text-emerald-300 mb-1">
+                <span>Evaporation Rate (&rho;)</span>
+                <span id="rhoLabel">0.15</span>
+              </div>
+              <input id="rhoParam" type="range" min="0.05" max="0.5" step="0.01" value="0.15" class="w-full accent-emerald-400 bg-colony-800 rounded-lg">
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs text-emerald-300 mb-1">
+                <span>Swarm Size ($k$)</span>
+                <span id="antsLabel">25</span>
+              </div>
+              <input id="antsParam" type="range" min="5" max="60" step="5" value="25" class="w-full accent-emerald-400 bg-colony-800 rounded-lg">
+            </div>
+          </div>
+
+          <!-- Calculation Telemetry -->
+          <div class="p-3 rounded-xl bg-colony-950/70 border border-emerald-900/50 space-y-1.5 text-xs">
+            <div class="flex justify-between"><span class="text-gray-400">ACO Status:</span><span id="iterMetric" class="font-mono text-emerald-300">Ready</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Total Driving Distance:</span><span id="distMetric" class="font-mono text-amber-300">-- km</span></div>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <button id="runACOBtn" class="w-full py-2.5 px-4 bg-emerald-500 hover:bg-emerald-400 text-colony-950 font-semibold rounded-xl transition duration-150 flex items-center justify-center gap-2 text-sm">
+            <span>Solve Route on Actual Roads</span>
+          </button>
+          <button id="clearCheckpointsBtn" class="w-full py-2 px-4 bg-colony-800 hover:bg-colony-700 text-emerald-300 text-xs font-semibold rounded-xl border border-emerald-800/80 transition duration-150">
+            Clear All Stops
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. BIOLOGY & MATHEMATICS -->
+  <section id="biology-math" class="py-14 px-6 max-w-6xl mx-auto border-t border-emerald-900/30">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div class="bg-colony-900/40 border border-emerald-900/40 p-6 rounded-2xl">
+        <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <span>🌿</span> Biological Stigmergy
+        </h3>
+        <ul class="space-y-3 text-sm text-emerald-200/80">
+          <li class="flex items-start gap-2">
+            <span class="text-amber-400">▪</span>
+            <span><strong>Stigmergy:</strong> Indirect communication via local environmental modification without central dispatchers[cite: 1].</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-amber-400">▪</span>
+            <span><strong>Positive Feedback:</strong> Shorter paths enable higher frequency round-trips, depositing pheromones faster[cite: 1].</span>
+          </li>
+          <li class="flex items-start gap-2">
+            <span class="text-amber-400">▪</span>
+            <span><strong>Negative Feedback:</strong> Pheromones evaporate naturally, clearing stale or congested corridors[cite: 1].</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="bg-colony-900/40 border border-emerald-900/40 p-6 rounded-2xl">
+        <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+          <span>📐</span> Key Algorithmic Equations
+        </h3>
+        <div class="space-y-3 text-xs">
+          <div class="bg-colony-950 p-3 rounded-lg border border-emerald-900/60 font-mono">
+            <p class="text-emerald-400 font-semibold mb-1">1. Transition Probability:</p>
+            <p class="text-gray-300">P_ij^k = [ &tau;_ij^&alpha; &times; &eta;_ij^&beta; ] / &Sigma; [ &tau;_iz^&alpha; &times; &eta;_iz^&beta; ]</p>
+          </div>
+          <div class="bg-colony-950 p-3 rounded-lg border border-emerald-900/60 font-mono">
+            <p class="text-emerald-400 font-semibold mb-1">2. Evaporation & Deposition:</p>
+            <p class="text-gray-300">&tau;_ij &larr; (1 - &rho;)&tau;_ij + &Sigma; &Delta;&tau;_ij^k</p>
+            <p class="text-gray-400 text-[11px] mt-1">&Delta;&tau;_ij^k = Q / L_k</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. PPT DROPZONE -->
+  <section id="presentation-deck" class="py-14 px-6 max-w-6xl mx-auto border-t border-emerald-900/30">
+    <div class="text-center mb-8">
+      <h2 class="text-3xl font-bold text-white mb-2">Presentation Deck</h2>
+      <p class="text-sm text-emerald-400/80">Upload your PDF/PPT presentation or keep your registered copy accessible</p>
+    </div>
+
+    <div class="bg-colony-900/40 border-2 border-dashed border-emerald-700/50 rounded-3xl p-8 flex flex-col items-center justify-center text-center pheromone-glow">
+      <div class="w-16 h-16 rounded-full bg-emerald-900/50 flex items-center justify-center text-emerald-400 text-3xl mb-4 border border-emerald-500/30">
+        📊
+      </div>
+      <h3 class="text-lg font-semibold text-white mb-1">Presentation Document</h3>
+      <p class="text-xs text-emerald-200/60 max-w-md mb-6">
+        Registered: <code>EOB presentation 02-08-26.pptx</code>. Attach your slide deck to preview directly[cite: 1].
+      </p>
+
+      <div id="pptContainer" class="w-full h-80 bg-colony-950 rounded-xl border border-emerald-900/60 overflow-hidden mb-6 flex items-center justify-center">
+        <iframe id="pptViewer" src="" class="w-full h-full hidden" frameborder="0"></iframe>
+        <div id="pptPlaceholder" class="text-xs text-emerald-500/60 flex flex-col items-center gap-2">
+          <span>📁 No live slide preview active.</span>
+          <span class="text-[11px] text-gray-500">Upload a PDF export of your deck for instant embedded viewing.</span>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-4">
+        <label class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-colony-950 font-semibold text-xs rounded-xl cursor-pointer transition">
+          Choose Slide File
+          <input id="pptFileInput" type="file" accept=".pdf,.ppt,.pptx" class="hidden" />
+        </label>
+        <span id="fileNameDisplay" class="text-xs text-emerald-400/80">No file selected</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. TEAM PHOTO & CONTRIBUTORS -->
+  <section id="team" class="py-16 px-6 max-w-6xl mx-auto border-t border-emerald-900/30">
+    <div class="text-center mb-10">
+      <h2 class="text-3xl font-bold text-white mb-2">Project Team</h2>
+      <p class="text-sm text-emerald-400/80">Engineering Optimization & Bio-Inspired Metaheuristics</p>
+    </div>
+
+    <!-- Team Photo Upload Placeholder -->
+    <div class="max-w-4xl mx-auto mb-10">
+      <div class="relative w-full h-72 sm:h-96 rounded-3xl bg-colony-900/60 border-2 border-dashed border-emerald-600/40 overflow-hidden flex flex-col items-center justify-center p-6 text-center">
+        <img id="teamPhotoImg" src="" alt="Group Photo" class="w-full h-full object-cover rounded-2xl hidden" />
+        <div id="photoPlaceholderText" class="space-y-2">
+          <div class="text-4xl text-emerald-500/40">👥</div>
+          <p class="text-sm font-semibold text-emerald-300">Group Photo Placeholder</p>
+          <p class="text-xs text-emerald-200/50">Replace this space with your team photograph.</p>
+          <label class="mt-2 inline-block px-4 py-2 bg-colony-800 hover:bg-colony-700 text-emerald-300 text-xs rounded-lg border border-emerald-700/50 cursor-pointer">
+            Upload Group Photo
+            <input id="teamPhotoInput" type="file" accept="image/*" class="hidden" />
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto">
+      <div class="bg-colony-900/40 p-4 rounded-xl border border-emerald-900/50 text-center">
+        <div class="w-10 h-10 mx-auto rounded-full bg-emerald-800/40 border border-emerald-500/30 flex items-center justify-center text-xs font-bold text-emerald-300 mb-2">DM</div>
+        <h4 class="text-sm font-semibold text-white">Deveshi Morval</h4>
+        <p class="text-[11px] text-emerald-400/70">Contributor</p>
+      </div>
+      <div class="bg-colony-900/40 p-4 rounded-xl border border-emerald-900/50 text-center">
+        <div class="w-10 h-10 mx-auto rounded-full bg-emerald-800/40 border border-emerald-500/30 flex items-center justify-center text-xs font-bold text-emerald-300 mb-2">GM</div>
+        <h4 class="text-sm font-semibold text-white">Gurvansh Modi</h4>
+        <p class="text-[11px] text-emerald-400/70">Contributor</p>
+      </div>
+      <div class="bg-colony-900/40 p-4 rounded-xl border border-emerald-900/50 text-center">
+        <div class="w-10 h-10 mx-auto rounded-full bg-emerald-800/40 border border-emerald-500/30 flex items-center justify-center text-xs font-bold text-emerald-300 mb-2">PM</div>
+        <h4 class="text-sm font-semibold text-white">Pragyan Mehta</h4>
+        <p class="text-[11px] text-emerald-400/70">Contributor</p>
+      </div>
+      <div class="bg-colony-900/40 p-4 rounded-xl border border-emerald-900/50 text-center">
+        <div class="w-10 h-10 mx-auto rounded-full bg-emerald-800/40 border border-emerald-500/30 flex items-center justify-center text-xs font-bold text-emerald-300 mb-2">PM</div>
+        <h4 class="text-sm font-semibold text-white">Parth Mehta</h4>
+        <p class="text-[11px] text-emerald-400/70">Contributor</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="py-8 text-center text-xs text-emerald-500/40 border-t border-emerald-950">
+    &copy; 2026 Ant Colony Optimization Research Model. Configured with OpenStreetMap road geometry.
+  </footer>
+
+  <!-- REAL ROAD SCRIPT -->
+  <script>
+    // 1. Initialise Leaflet Map
+    const map = L.map('mumbaiMap', { zoomControl: true, attributionControl: false }).setView([19.0400, 72.8600], 11);
+
+    // CartoDB Dark Matter tile layer
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 18,
+      subdomains: 'abcd'
+    }).addTo(map);
+
+    let checkpoints = [];
+    let mapMarkers = [];
+    let routePolylines = [];
+    let distanceMatrix = []; // driving distance in meters
+
+    const antIcon = L.divIcon({
+      className: 'custom-ant-pin',
+      html: `<div style="background:#10b981; border:2px solid #ffffff; width:14px; height:14px; border-radius:50%; box-shadow:0 0 10px #10b981;"></div>`,
+      iconSize: [14, 14],
+      iconAnchor: [7, 7]
+    });
+
+    // 2. Add Checkpoint
+    function addCheckpoint(name, lat, lng) {
+      const point = { name: name || `Stop ${checkpoints.length + 1}`, lat: parseFloat(lat), lng: parseFloat(lng) };
+      checkpoints.push(point);
+
+      const marker = L.marker([point.lat, point.lng], { icon: antIcon }).addTo(map);
+      marker.bindPopup(`<b>${point.name}</b>`).openPopup();
+      mapMarkers.push(marker);
+
+      clearVisuals();
+      updateCheckpointsUI();
+    }
+
+    function addPreset(name, lat, lng) {
+      addCheckpoint(name, lat, lng);
+    }
+
+    map.on('click', (e) => {
+      addCheckpoint(`Stop ${checkpoints.length + 1}`, e.latlng.lat, e.latlng.lng);
+    });
+
+    function removeCheckpoint(idx) {
+      map.removeLayer(mapMarkers[idx]);
+      mapMarkers.splice(idx, 1);
+      checkpoints.splice(idx, 1);
+      clearVisuals();
+      updateCheckpointsUI();
+    }
+
+    function clearVisuals() {
+      routePolylines.forEach(l => map.removeLayer(l));
+      routePolylines = [];
+      distanceMatrix = [];
+      document.getElementById('iterMetric').innerText = 'Ready';
+      document.getElementById('distMetric').innerText = '-- km';
+    }
+
+    function updateCheckpointsUI() {
+      const list = document.getElementById('checkpointsList');
+      const badge = document.getElementById('checkpointBadge');
+      badge.innerText = `${checkpoints.length} pts`;
+
+      if (checkpoints.length === 0) {
+        list.innerHTML = `<p class="text-gray-500 italic">No stops added. Click the map or search above.</p>`;
+        return;
+      }
+
+      list.innerHTML = checkpoints.map((pt, i) => `
+        <div class="flex items-center justify-between bg-colony-950 p-2 rounded-lg border border-emerald-900/60">
+          <span class="truncate pr-2"><b class="text-emerald-400 font-mono">#${i+1}</b> ${pt.name}</span>
+          <button onclick="removeCheckpoint(${i})" class="text-red-400 hover:text-red-300 font-bold px-1">&times;</button>
+        </div>
+      `).join('');
+    }
+
+    // 3. Search Bar Handling
+    const searchInput = document.getElementById('locationSearchInput');
+    const resultsList = document.getElementById('searchResultsList');
+
+    searchInput.addEventListener('input', async (e) => {
+      const q = e.target.value.trim();
+      if (q.length < 3) {
+        resultsList.classList.add('hidden');
+        return;
+      }
+
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q + ' Mumbai')}&limit=4`);
+        const data = await res.json();
+        if (data.length > 0) {
+          resultsList.innerHTML = data.map(item => `
+            <li class="p-2 hover:bg-emerald-950 cursor-pointer border-b border-emerald-900/40 text-emerald-200"
+                onclick="selectLocation('${item.display_name.replace(/'/g, "\\'")}', ${item.lat}, ${item.lon})">
+              ${item.display_name}
+            </li>
+          `).join('');
+          resultsList.classList.remove('hidden');
+        } else {
+          resultsList.classList.add('hidden');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    function selectLocation(name, lat, lon) {
+      addCheckpoint(name.split(',')[0], lat, lon);
+      map.setView([lat, lon], 13);
+      searchInput.value = '';
+      resultsList.classList.add('hidden');
+    }
+
+    document.getElementById('searchBtn').addEventListener('click', () => {
+      const q = searchInput.value.trim();
+      if (q.length >= 3) {
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q + ' Mumbai')}&limit=1`)
+          .then(r => r.json())
+          .then(data => {
+            if (data.length > 0) selectLocation(data[0].display_name, data[0].lat, data[0].lon);
+          });
+      }
+    });
+
+    // 4. Fetch Actual Driving Distances via OSRM Driving Table
+    async function fetchDrivingDistanceMatrix() {
+      const coords = checkpoints.map(c => `${c.lng},${c.lat}`).join(';');
+      const url = `https://router.project-osrm.org/table/v1/driving/${coords}?annotations=distance`;
+      
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.code === 'Ok' && data.distances) {
+        return data.distances; // 2D array of road distances in meters
+      }
+      throw new Error("Could not fetch road table");
+    }
+
+    // 5. Ant Colony Optimization Solver using Actual Road Distance Matrix
+    function solveACOWithRoads(matrix) {
+      const n = checkpoints.length;
+      const alpha = 1.0;
+      const beta = 2.0;
+      const rho = parseFloat(document.getElementById('rhoParam').value);
+      const antCount = parseInt(document.getElementById('antsParam').value);
+      const iterations = 40;
+
+      // Initialise pheromones
+      let pheromones = Array.from({ length: n }, () => Array(n).fill(1.0));
+
+      let bestTour = null;
+      let bestDist = Infinity;
+
+      for (let it = 0; it < iterations; it++) {
+        let allTours = [];
+
+        for (let a = 0; a < antCount; a++) {
+          let visited = [Math.floor(Math.random() * n)];
+          while (visited.length < n) {
+            const curr = visited[visited.length - 1];
+            let probs = [];
+            let sum = 0;
+
+            for (let next = 0; next < n; next++) {
+              if (!visited.includes(next)) {
+                const tau = pheromones[curr][next];
+                const roadDist = matrix[curr][next] || 500;
+                const eta = 1.0 / roadDist;
+                const p = Math.pow(tau, alpha) * Math.pow(eta, beta);
+                probs.push({ node: next, weight: p });
+                sum += p;
+              }
+            }
+
+            let r = Math.random() * sum;
+            let selected = probs[0].node;
+            for (let p of probs) {
+              r -= p.weight;
+              if (r <= 0) {
+                selected = p.node;
+                break;
+              }
+            }
+            visited.push(selected);
+          }
+          allTours.push(visited);
+        }
+
+        // Evaporation
+        for (let i = 0; i < n; i++) {
+          for (let j = 0; j < n; j++) {
+            pheromones[i][j] *= (1 - rho);
+          }
+        }
+
+        // Deposition
+        for (let tour of allTours) {
+          let tourDist = 0;
+          for (let i = 0; i < tour.length; i++) {
+            const u = tour[i];
+            const v = tour[(i + 1) % tour.length];
+            tourDist += matrix[u][v];
+          }
+
+          if (tourDist < bestDist) {
+            bestDist = tourDist;
+            bestTour = tour;
+          }
+
+          for (let i = 0; i < tour.length; i++) {
+            const u = tour[i];
+            const v = tour[(i + 1) % tour.length];
+            pheromones[u][v] += (10000.0 / tourDist);
+            pheromones[v][u] += (10000.0 / tourDist);
+          }
+        }
+      }
+
+      return { bestTour, bestDist };
+    }
+
+    // 6. Draw Actual Drivable Road Polylines (Snapping to Mumbai streets & bridges)
+    async function drawActualRoadRoute(tour) {
+      const spinner = document.getElementById('routingSpinner');
+      spinner.classList.remove('hidden');
+
+      routePolylines.forEach(l => map.removeLayer(l));
+      routePolylines = [];
+
+      // Order coordinates by the optimal ACO sequence
+      const orderedCoords = tour.map(idx => `${checkpoints[idx].lng},${checkpoints[idx].lat}`);
+      orderedCoords.push(`${checkpoints[tour[0]].lng},${checkpoints[tour[0]].lat}`); // return loop
+
+      const url = `https://router.project-osrm.org/route/v1/driving/${orderedCoords.join(';')}?overview=full&geometries=geojson`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+          const routeGeo = data.routes[0].geometry;
+          const totalDistanceKm = (data.routes[0].distance / 1000).toFixed(2);
+
+          // Convert GeoJSON coords [lon, lat] to Leaflet [lat, lon]
+          const latlngs = routeGeo.coordinates.map(c => [c[1], c[0]]);
+
+          // Draw real road line in glowing amber
+          const polyline = L.polyline(latlngs, {
+            color: '#f59e0b',
+            weight: 4,
+            opacity: 0.95
+          }).addTo(map);
+
+          routePolylines.push(polyline);
+          map.fitBounds(polyline.getBounds(), { padding: [35, 35] });
+
+          document.getElementById('distMetric').innerText = `${totalDistanceKm} km`;
+          document.getElementById('iterMetric').innerText = 'Optimal Road Path Found';
+        }
+      } catch (e) {
+        console.error("OSRM geometry failed", e);
+      } finally {
+        spinner.classList.add('hidden');
+      }
+    }
+
+    // Solve Button
+    document.getElementById('runACOBtn').addEventListener('click', async () => {
+      if (checkpoints.length < 3) {
+        alert('Please add at least 3 stops across Mumbai.');
+        return;
+      }
+      
+      const spinner = document.getElementById('routingSpinner');
+      spinner.classList.remove('hidden');
+      document.getElementById('iterMetric').innerText = 'Building matrix...';
+
+      try {
+        const matrix = await fetchDrivingDistanceMatrix();
+        document.getElementById('iterMetric').innerText = 'Optimizing swarm...';
+        const { bestTour } = solveACOWithRoads(matrix);
+        await drawActualRoadRoute(bestTour);
+      } catch (err) {
+        alert("Failed to fetch road network. Check internet connection.");
+        console.error(err);
+      } finally {
+        spinner.classList.add('hidden');
+      }
+    });
+
+    document.getElementById('clearCheckpointsBtn').addEventListener('click', () => {
+      checkpoints = [];
+      mapMarkers.forEach(m => map.removeLayer(m));
+      mapMarkers = [];
+      clearVisuals();
+      updateCheckpointsUI();
+    });
+
+    document.getElementById('rhoParam').addEventListener('input', (e) => {
+      document.getElementById('rhoLabel').innerText = parseFloat(e.target.value).toFixed(2);
+    });
+    document.getElementById('antsParam').addEventListener('input', (e) => {
+      document.getElementById('antsLabel').innerText = e.target.value;
+    });
+
+    // File handlers
+    document.getElementById('pptFileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        document.getElementById('fileNameDisplay').innerText = file.name;
+        if (file.type === 'application/pdf') {
+          const fileURL = URL.createObjectURL(file);
+          const viewer = document.getElementById('pptViewer');
+          viewer.src = fileURL;
+          viewer.classList.remove('hidden');
+          document.getElementById('pptPlaceholder').classList.add('hidden');
+        } else {
+          document.getElementById('pptPlaceholder').innerHTML = `
+            <span class="text-emerald-400 font-semibold">Loaded: ${file.name}</span>
+            <span class="text-[11px] text-gray-400">(Upload PDF export for live presentation viewing)</span>
+          `;
+        }
+      }
+    });
+
+    document.getElementById('teamPhotoInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = document.getElementById('teamPhotoImg');
+          img.src = event.target.result;
+          img.classList.remove('hidden');
+          document.getElementById('photoPlaceholderText').classList.add('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Default Seed Landmarks
+    window.onload = () => {
+      addPreset('CSMT South Mumbai', 18.9401, 72.8356);
+      addPreset('Worli Sea Face', 19.0130, 72.8152);
+      addPreset('BKC G-Block', 19.0664, 72.8687);
+      addPreset('Andheri Link Road', 19.1197, 72.8464);
+    };
+  </script>
+</body>
+</html>
